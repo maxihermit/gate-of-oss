@@ -44,21 +44,21 @@
 ### Claude Code
 
 ```bash
-curl -o ~/.claude/commands/oss.md https://raw.githubusercontent.com/maxihermit/oss/main/oss.md
+curl -o ~/.claude/commands/oss.md https://raw.githubusercontent.com/maxihermit/gate-of-oss/main/oss.md
 ```
 
 ### OpenAI Codex
 
 ```bash
 mkdir -p .codex/skills/oss
-curl -o .codex/skills/oss/SKILL.md https://raw.githubusercontent.com/maxihermit/oss/main/oss.md
+curl -o .codex/skills/oss/SKILL.md https://raw.githubusercontent.com/maxihermit/gate-of-oss/main/oss.md
 ```
 
 ### Cursor
 
 ```bash
 mkdir -p .cursor/rules
-curl -o .cursor/rules/oss.mdc https://raw.githubusercontent.com/maxihermit/oss/main/oss.md
+curl -o .cursor/rules/oss.mdc https://raw.githubusercontent.com/maxihermit/gate-of-oss/main/oss.md
 ```
 
 ### GitHub Copilot
@@ -170,21 +170,21 @@ Gives you a verdict: SSR / SR / R / N / Junk
 #### Claude Code
 
 ```bash
-curl -o ~/.claude/commands/oss.md https://raw.githubusercontent.com/maxihermit/oss/main/oss.md
+curl -o ~/.claude/commands/oss.md https://raw.githubusercontent.com/maxihermit/gate-of-oss/main/oss.md
 ```
 
 #### OpenAI Codex
 
 ```bash
 mkdir -p .codex/skills/oss
-curl -o .codex/skills/oss/SKILL.md https://raw.githubusercontent.com/maxihermit/oss/main/oss.md
+curl -o .codex/skills/oss/SKILL.md https://raw.githubusercontent.com/maxihermit/gate-of-oss/main/oss.md
 ```
 
 #### Cursor
 
 ```bash
 mkdir -p .cursor/rules
-curl -o .cursor/rules/oss.mdc https://raw.githubusercontent.com/maxihermit/oss/main/oss.md
+curl -o .cursor/rules/oss.mdc https://raw.githubusercontent.com/maxihermit/gate-of-oss/main/oss.md
 ```
 
 #### GitHub Copilot
