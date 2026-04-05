@@ -1,12 +1,14 @@
-# 四次元百寶袋（4D Bag）
+# 王之開源（Gate of Open Source）
 
 ![banner](assets/banner.png)
 
 [繁體中文](#這是什麼) | [English](#english)
 
+> *「你竟敢在沒有查閱寶庫的情況下開發？天下所有的開源寶物皆屬於我。」*
+
 ## 這是什麼
 
-一個 AI Skill。裝好之後，你只要打 `/oss`，它就會像從百寶袋裡翻東西一樣，自動去 GitHub 和 Hacker News 幫你找最近熱門的開源專案，跟你說哪些對你正在開發的東西有用，然後幫你檢查那些專案安不安全。
+一個 AI Skill。裝好之後，你只要打 `/oss`，它就會自動去 GitHub 和 Hacker News 找最近熱門的開源專案，跟你說哪些對你正在開發的東西有用，然後幫你檢查那些專案安不安全。
 
 **它只會給你報告，不會幫你安裝任何東西。**
 
@@ -18,7 +20,7 @@
 每天 GitHub 上都有新的開源工具出現
 你不可能每天自己去看
       ↓
-/oss 幫你去翻百寶袋
+/oss 幫你去寶庫翻
       ↓
 比對你的專案用了什麼技術、缺了什麼
       ↓
@@ -86,19 +88,19 @@ curl -o .cursor/rules/oss.mdc https://raw.githubusercontent.com/maxihermit/gate-
 幫我建一個排程任務，每天早上跑 /oss all
 ```
 
-每天早上自動收到報告。
-
 ## 報告長什麼樣子
 
 ```
-我去翻了一下 GitHub，幫 my-web-app 找到幾個好東西：
+我的寶庫裡有幾個東西可能適合 my-web-app：
 
-🔮 my-web-app — 電商網站
+═══════════════════════════════════════
+  my-web-app — 電商網站
+═══════════════════════════════════════
 
   SSR  ⭐ 15,234  vercel/ai — 3 行就能做串流 AI 回應
   SR   ⭐ 82,000  shadcn/ui — 不用再自己刻 UI 元件
 
-  ┌─ 從百寶袋裡翻到：vercel/ai
+  ┌─ vercel/ai — 做 AI 功能的 SDK
   │  ⭐ 15,234  MIT  2 天前更新  156 人貢獻
   │  SSR
   │
@@ -129,6 +131,8 @@ export GITHUB_TOKEN=ghp_...
 ---
 
 ## English
+
+> *"You dare develop without consulting the treasury? All the world's open-source treasures belong to me."*
 
 An AI skill that searches GitHub and Hacker News for trending open-source projects, tells you which ones are useful for your project, and checks if they're safe to use.
 
