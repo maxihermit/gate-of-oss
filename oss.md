@@ -47,27 +47,49 @@ exclude: [crypto, blockchain, game-dev]
 
 **If command is `init`:** always ask, even if a decree already exists.
 
+**If command is `all`:** scan each subdirectory. Each project may use different languages — search GitHub separately per language detected. Create a `.oss-profile.yml` in each subdirectory if missing.
+
 **NEVER read source code, .env, credentials, or secrets. A king does not rummage through servants' drawers.**
 
 ## Step 2: Open the Gate
 
+**IMPORTANT: Use `python` (not `python3`) on Windows. Always use `encoding='utf-8'` when reading JSON files in Python on Windows.**
+
+First, calculate the date. Use a cross-platform approach:
+
 ```bash
-# The Gate of GitHub — treasures pushed in the last N days
-curl -s "https://api.github.com/search/repositories?q=pushed:>$(date -d '7 days ago' +%Y-%m-%d)+stars:>100&sort=stars&order=desc&per_page=25" \
+# Cross-platform date calculation (works on Windows, Mac, Linux)
+python -c "from datetime import datetime, timedelta; print((datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d'))"
+```
+
+Store the result and use it in the search query:
+
+```bash
+# The Gate of GitHub
+# Replace DATE with the calculated date above
+# Replace LANG with detected language (python, typescript, etc.)
+# If the user has multiple projects with different languages, run separate searches per language
+curl -s "https://api.github.com/search/repositories?q=pushed:>DATE+stars:>100+language:LANG&sort=stars&order=desc&per_page=25" \
   -H "Accept: application/vnd.github.v3+json" -H "User-Agent: oss" \
   ${GITHUB_TOKEN:+-H "Authorization: token $GITHUB_TOKEN"}
 ```
 
 ```bash
-# The Gate of Hacker News — treasures spoken of in the courts
-curl -s "https://hn.algolia.com/api/v1/search?query=github.com&tags=story&numericFilters=created_at_i>$(date -d '7 days ago' +%s),points>20&hitsPerPage=20"
+# The Gate of Hacker News
+curl -s "https://hn.algolia.com/api/v1/search?query=github.com&tags=story&numericFilters=created_at_i>TIMESTAMP,points>20&hitsPerPage=20"
 ```
 
-If the user specified a topic, add it to the search. If the profile has `interests`, also search for those.
+**When parsing JSON responses with Python on Windows, always open files with `encoding='utf-8'` and handle emoji/unicode by using `.encode('ascii','replace').decode()` for display.**
+
+If the user specified a topic, add it to the GitHub search `q` parameter.
+If the profile has `interests`, also run additional searches for those topics.
+If `all` mode with multiple languages, run one search per language.
 
 ## Step 3: Appraise
 
 Judge each treasure against the user's kingdom. Only present treasures worthy of a king's attention. **An empty vault report is more honorable than presenting counterfeits.**
+
+**If no relevant treasures are found for a project, say so clearly: "No relevant new tools found for [project name] this week." Do not pad the report with irrelevant results.**
 
 Classification:
 
@@ -85,28 +107,40 @@ Every treasure must pass the King's inspection:
 # Inscription check (license)
 curl -s "https://api.github.com/repos/OWNER/REPO/license" -H "Accept: application/vnd.github.v3+json" -H "User-Agent: oss" ${GITHUB_TOKEN:+-H "Authorization: token $GITHUB_TOKEN"}
 
-# Forge inspection (maintenance — check pushed_at, archived)
+# Forge inspection (maintenance — check pushed_at, archived, stargazers_count, forks_count)
 curl -s "https://api.github.com/repos/OWNER/REPO" -H "Accept: application/vnd.github.v3+json" -H "User-Agent: oss" ${GITHUB_TOKEN:+-H "Authorization: token $GITHUB_TOKEN"}
 
-# Curse detection (CVE scan for npm dependencies)
+# Curse detection (CVE scan — check dependencies if package.json or requirements.txt exists)
 curl -s -X POST "https://api.osv.dev/v1/query" -H "Content-Type: application/json" -d '{"package":{"name":"PKG","ecosystem":"npm"},"version":"VER"}'
+# For Python packages, use ecosystem "PyPI" instead of "npm"
 ```
 
-Marks of a counterfeit: no inscription (no license), sealed by its creator (archived), abandoned forge (last push > 1 year), lone blacksmith (single contributor).
+Marks of a counterfeit:
+- No license → legally cannot use, always Junk
+- AGPL/GPL → warn about copyleft restrictions, not automatically Junk but flag clearly
+- Archived → dead project, Junk
+- Last push > 1 year → likely abandoned, at best N
+- Single contributor → bus factor risk, flag it
 
 ## Step 5: Present to the King
 
 ```
-## Kingdom: [project name]
-[description from profile]
-Arsenal: [tech stack]
-Vulnerabilities: [pain points]
+## [project name]
+[description]
+Tech: [stack]
+Pain points: [pain points]
 
-### owner/repo — what this treasure does
-⭐ N stars | MIT | active forge | N blacksmiths
+### owner/repo — what it does
+⭐ N stars | MIT | N days ago | N contributors
 **SSR**
-Appraisal: [why this treasure serves the kingdom]
-Authenticity: [security summary]
+Why: [specifically how this helps with the user's pain point or interest]
+Security: [license, CVE count, maintenance status]
+```
+
+If no results for a project:
+```
+## [project name]
+No relevant new tools found this week.
 ```
 
 ## The King's Law
