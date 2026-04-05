@@ -22,190 +22,200 @@ You only show things. You never install anything.
 - `/oss daily` — last 24 hours (default: weekly)
 - `/oss presentation tools` — search specific topic
 - `/oss init` — interactively create project profile
-- `/oss rescan` — force full code re-analysis
 
-## Step 0: Understand the Code (NEVER SKIP)
+## Overview: Two-phase flow
 
-**Rule: if you don't understand the code, you can't recommend anything. A recommendation that doesn't solve a real problem is worse than no recommendation — it wastes the user's time.**
-
-Read `.oss-profile.yml`. Check for `code_analysis.last_scan_commit`.
-
-### First scan (no `code_analysis`, or `/oss rescan`, or `/oss init`)
-
-Results are cached for all future runs. Uses a 3-layer approach to minimize token cost while staying accurate.
-
-**Layer 1: Dependency manifests (MUST read, cheap, always accurate)**
-
-Read `package.json`, `Cargo.toml`, `pubspec.yaml`, `go.mod`, `requirements.txt`, etc. These are machine-managed and never stale. This tells you exactly what's installed.
-
-**Layer 2: Documentation (read if exists, treat as HINTS not facts)**
-
-Read `README.md`, `CLAUDE.md`, `docs/`, `ARCHITECTURE.md`, etc. These provide intent, design rationale, and pain points the developer already knows about.
-
-⚠️ **MD files go stale.** Treat them as "what the developer intended" not "what the code does." Specifically:
-- Architecture descriptions → might describe target state, not current state
-- Feature lists → might include planned but unimplemented features
-- Dependency descriptions → might reference removed or replaced libraries
-- Performance claims → might be outdated after refactoring
-
-**Layer 3: Code spot-checks (targeted reads, only where Layer 1+2 suggest a gap)**
-
-For each potential gap identified from Layer 1+2, verify by reading the actual code:
-- Read 2-3 key files in the area (not the entire codebase)
-- Check `git log --oneline -10 -- <path>` — is this area actively changing or stable?
-- If MD says "X is a problem" but code shows it's been fixed → trust code, ignore MD
-
-**The verification rule: if Layer 2 (MD) claims something but Layer 1 (manifest) or Layer 3 (code) contradicts it, always trust the code.**
-
-**Staleness detection shortcuts:**
-- `git log --oneline -1 -- docs/` vs `git log --oneline -1` — if docs last touched months ago but code changed yesterday, docs are likely stale
-- If README mentions a dependency not in the manifest → stale
-- If CLAUDE.md describes a file path that doesn't exist → stale
-
-**Layer 3 checklist for each candidate gap:**
-- Is this actually causing problems, or is it stable code nobody touches?
-- Would a library help, or would 30 minutes of internal cleanup solve it?
-- What's the real migration cost vs. benefit?
-- Is the "problem" actually an intentional design choice?
-
-**If you can't prove the gap with evidence from the code, it's not a gap.**
-
-Save to `.oss-profile.yml`:
-
-```yaml
-name: (from manifest)
-description: (from manifest or README)
-stack: [detected languages]
-exclude: []
-
-code_analysis:
-  last_scan: "2025-01-15"
-  last_scan_commit: "abc1234"
-  docs_freshness: "stale"  # fresh | stale | none — based on git log comparison
-
-  strengths:
-    - area: "Description"
-      detail: "Why it's good — specific files/patterns"
-
-  verified_not_needed:
-    - name: library-name
-      reason: "Specific reason from code analysis"
-
-  actual_gaps:
-    - area: "Gap description"
-      detail: "Evidence from code"
-      search_keywords: [keyword1, keyword2]
+```
+Phase 1 (cheap): Read tech stack → Search → Show menu → Ask user what's interesting
+Phase 2 (targeted): User picks items → Read actual code for those areas → Honest verdict
 ```
 
-**If no genuine gaps are found after analysis, say so honestly and stop. Don't search for things the project doesn't need.**
+The user decides what to look deeper into. The AI only reads code for the areas the user cares about. This saves tokens and avoids recommending things nobody asked for.
 
-### Incremental scan (has recent `code_analysis`)
+## Phase 1: Discover & Present
 
-1. `git diff <last_scan_commit>..HEAD --stat`
-2. Small changes, no dependency changes → use cached analysis
-3. Dependency manifests changed → re-scan only changed dependency areas (Layer 1 + targeted Layer 3)
-4. MD files changed → re-read them but verify claims against code before updating gaps
-5. Major refactoring (>30 files changed) → full rescan
+### Step 1.1: Read tech stack (MUST do, cheap)
 
-### Privacy
+Read dependency manifests: `package.json`, `Cargo.toml`, `pubspec.yaml`, `go.mod`, `requirements.txt`, etc. These are machine-managed and always accurate.
 
-- DO read code structure and patterns to understand architecture
-- DO NOT read `.env`, credentials, secrets, API keys
-- DO NOT send code content to external APIs — only package names go to GitHub/OSV
+Also check `.oss-profile.yml` — if it exists and has `verified` entries from previous runs, note them (skip re-recommending things already evaluated).
 
-## Step 1: Search (ONLY for verified actual_gaps)
+If no manifest exists, auto-generate `.oss-profile.yml` from README or ask user 3 questions (`/oss init`).
 
-**Search keywords come from `actual_gaps[].search_keywords`. Never search generic stack keywords like "react" or "rust" — that produces noise.**
+Never read source code, `.env`, credentials, or secrets in this phase.
+
+### Step 1.2: Search GitHub + HN
 
 Calculate date (7 days ago for weekly, 1 for daily, 30 for monthly).
 
-Per gap:
+Search by language and ecosystem keywords from the manifest (not generic terms):
+
 ```bash
-curl -s "https://api.github.com/search/repositories?q=pushed:>DATE+KEYWORDS+stars:>100&sort=stars&order=desc&per_page=25" \
+curl -s "https://api.github.com/search/repositories?q=pushed:>DATE+stars:>100+language:LANG&sort=stars&order=desc&per_page=25" \
   -H "Accept: application/vnd.github.v3+json" -H "User-Agent: oss" ${GITHUB_TOKEN:+-H "Authorization: token $GITHUB_TOKEN"}
 ```
 
-Once overall:
 ```bash
-curl -s "https://hn.algolia.com/api/v1/search?query=KEYWORDS&tags=story&numericFilters=created_at_i>TIMESTAMP,points>20&hitsPerPage=20"
+curl -s "https://hn.algolia.com/api/v1/search?query=github.com&tags=story&numericFilters=created_at_i>TIMESTAMP,points>20&hitsPerPage=20"
 ```
 
-Deduplicate by repo name. Skip anything in `verified_not_needed`.
+HN runs once. Deduplicate by repo name.
 
-## Step 2: Grade
+### Step 1.3: Quick filter
 
-Metadata from search results (license, pushed_at, archived, stars). CVE check top 5:
+From search results, use metadata only (license, pushed_at, archived, stars). No extra API calls yet.
+
+Filter out:
+- Already in the project's dependencies (check manifest)
+- In `.oss-profile.yml` `verified.not_needed` from previous runs
+- No license → Junk, Archived → Junk
+- Clearly irrelevant to the project's domain
+
+Keep repos that *could* be relevant based on the project's tech stack and domain.
+
+### Step 1.4: Present menu & ask
+
+Show a categorized overview grouped by area. Use lightweight descriptions — NO before/after analysis yet (you haven't read the code).
+
+```
+═══════════════════════════════════════
+  [project] — [stack summary]
+  本週寶庫掃描（[date range]）
+═══════════════════════════════════════
+
+  串流/影像
+  ─────────────────────────────────────
+  ⭐ 12,345  owner/repo-a — one-liner
+  ⭐  3,000  owner/repo-b — one-liner
+
+  Web 框架/API
+  ─────────────────────────────────────
+  ⭐  8,000  owner/repo-c — one-liner
+
+  工具/DX
+  ─────────────────────────────────────
+  ⭐  5,000  owner/repo-d — one-liner
+
+  已排除：[N] 個（已在用、無授權、已封存）
+═══════════════════════════════════════
+```
+
+Then ask:
+
+> 有沒有哪個感興趣的？指給我看，我去比對你的實際代碼，告訴你值不值得用。
+> 也可以說「都不需要」，寶庫就先收著。
+
+**This is the key interaction point.** The user picks 0-N items. If 0, stop here — that's a valid outcome.
+
+## Phase 2: Deep Verify (only for items the user picked)
+
+### Step 2.1: Read actual code for selected areas
+
+For each item the user is interested in, NOW read the relevant code:
+
+- What dependency/approach does the project currently use for this area?
+- Read 2-3 key files (not the entire codebase)
+- `git log --oneline -10 -- <path>` — is this area stable or actively changing?
+- How complex is the current implementation? How many files/lines?
+
+**MD docs as hints:** If `README.md`, `CLAUDE.md`, or `docs/` exist, read them for context — but if they contradict the manifest or code, trust the code. MD goes stale.
+
+Staleness shortcuts:
+- `git log -1 -- docs/` much older than `git log -1` → docs likely stale
+- README mentions dependency not in manifest → stale
+- Doc describes file path that doesn't exist → stale
+
+### Step 2.2: CVE check
+
+For each selected repo, check for known vulnerabilities:
 
 ```bash
 curl -s -X POST "https://api.osv.dev/v1/query" -H "Content-Type: application/json" \
   -d '{"package":{"name":"PKG","ecosystem":"ECOSYSTEM"}}'
 ```
 
-**Before grading SSR or SR: verify the candidate would actually help the specific code.**
-- Check `strengths` — if the area is already strong, the library is redundant
-- Check `verified_not_needed` — skip known mismatches
-- Estimate migration cost vs. the actual lines/complexity it would save
-- If the "improvement" is just moving complexity from one place to another, grade N
+### Step 2.3: Grade with code evidence
 
-Rules:
+Now you have both the candidate library AND the actual code. Grade honestly:
+
+- **SSR** — solves a real problem in the code, safe, maintained, migration cost justified
+- **SR** — likely helps, worth evaluating further
+- **R** — interesting but benefit not confirmed after code review
+- **N** — concerns found (security, architecture mismatch, migration too costly)
+- **Junk** — unsafe, don't touch
+
+Grading rules:
 - No license → Junk
 - Archived → Junk
 - AGPL/GPL → warn copyleft, not auto-Junk
 - Last push > 1 year → max N
 - Single contributor → flag, lower one grade
+- **Current code already handles it well → N ("你的代碼已經夠好，不需要這個")**
+- **Migration cost > benefit → N with explanation**
+- **Fixes a real pain point with reasonable effort → SSR or SR**
 
-Grades:
-- **SSR** — solves a verified gap, safe, maintained, migration justified
-- **SR** — likely helps a verified gap, worth evaluating
-- **R** — interesting, gap or benefit not fully confirmed
-- **N** — concerns detected
-- **Junk** — unsafe, don't touch
+### Step 2.4: Verdict report
 
-## Step 3: Report
-
-**Group by gap. No gap = no recommendation.**
-
-```
-═══════════════════════════════════════
-  [project] — [description]
-  代碼掃描：[last_scan] | 缺口：[N] 個
-═══════════════════════════════════════
-
-  缺口 1：[description]
-  ─────────────────────────────────────
-  SSR  ⭐ 12,345  owner/repo — one-liner
-```
-
-SSR and SR get detail cards with code-aware before/after:
+For each selected item, show a code-aware detail card:
 
 ```
   ┌─ owner/repo — what it does
   │  ⭐ 12,345  MIT  2 days ago  156 contributors
-  │  SSR
+  │  [GRADE]
   │
-  │  你現在的代碼：[actual current approach from code scan]
-  │  用了之後：[concrete change with estimated effort]
-  │  值不值得：[honest verdict — include migration cost]
+  │  你現在的代碼：[what you found in the actual code]
+  │  用了之後：[concrete change]
+  │  值不值得：[honest verdict — migration cost, risk, benefit]
   │
   │  安全嗎：MIT ✓ | 漏洞: 0 | 有人維護 ✓
   └─────────────────────────────────────
 ```
 
-No gaps:
+**Be brutally honest.** If the code is already good:
+
 ```
-═══════════════════════════════════════
-  [project]
-  代碼掃描完成，目前沒有明顯缺口。繼續保持。
-═══════════════════════════════════════
+  ┌─ owner/repo — what it does
+  │  ⭐ 12,345  MIT
+  │  N — 你的代碼已經夠好
+  │
+  │  你現在的代碼：[what it does, why it's fine]
+  │  用了之後：換了一個依賴，但沒有實質改善
+  │  值不值得：不值得。你現在的做法已經是對的。
+  └─────────────────────────────────────
 ```
 
-Gaps but no results:
+### Step 2.5: Save to profile
+
+Update `.oss-profile.yml` with verification results so future runs don't re-evaluate:
+
+```yaml
+name: (from manifest)
+stack: [detected languages]
+exclude: []
+
+verified:
+  not_needed:
+    - name: owner/repo
+      reason: "Code already handles this well"
+      date: "2025-01-15"
+  worth_watching:
+    - name: owner/repo
+      reason: "Current dep is RC, watch for stable release"
+      date: "2025-01-15"
 ```
-═══════════════════════════════════════
-  [project]
-  有 [N] 個缺口，但寶庫裡這週沒有適合的。
-═══════════════════════════════════════
-```
+
+## For `/oss all`
+
+List all subdirectories. Collect unique languages. Run Phase 1 once per language. Present combined menu. User picks per-project.
+
+## For `/oss audit owner/repo`
+
+Skip Phase 1. Go directly to security check:
+- License type and implications
+- CVE check via OSV
+- Contributor count, last push, archived status
+- Open issues / security advisories
+- If project uses it already: check which version, any known issues
 
 ## Rules
 
@@ -215,5 +225,7 @@ Gaps but no results:
 - If 403/429, tell user to set GITHUB_TOKEN
 - Skip archived and unlicensed repos
 - Speak in user's language
-- **No code analysis = no recommendation. Period.**
-- **"You don't need anything" is a valid and valuable result.**
+- **Phase 1 is cheap and broad. Phase 2 is expensive and targeted.**
+- **The user decides what goes to Phase 2. Never deep-dive without being asked.**
+- **"都不需要" is a perfectly valid answer. Don't push.**
+- **"你的代碼已經夠好" is a valuable finding. Say it when it's true.**

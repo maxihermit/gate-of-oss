@@ -12,56 +12,56 @@
 
 這個 AI Skill 幫你解決這個問題。裝好之後打 `/oss`，它會：
 
-1. **先看懂你的代碼** — 不是隨便看 package.json 就完事，是真的讀你的代碼理解架構
-2. **找出真正的缺口** — 哪裡寫得好不用動，哪裡有問題才需要找工具
-3. **針對缺口搜 GitHub + Hacker News** — 只推薦能解決實際問題的
-4. **做資安檢查** — 授權條款、已知漏洞、有沒有人維護
+1. **讀你的技術棧** — 快速掃 package.json / Cargo.toml，知道你用了什麼
+2. **搜 GitHub + Hacker News** — 找這週跟你技術棧相關的熱門專案
+3. **擺出來問你** — 「這些有沒有感興趣的？」
+4. **你指哪個，它去比對你的實際代碼** — 讀對應的代碼，誠實告訴你值不值得
 
 **它只會給你報告，不會幫你安裝任何東西。畢竟王只鑑定，不親自動手。**
 
 ## 跟其他「找開源」的工具有什麼不同
 
-大多數推薦工具的做法是：看你用了 React → 推薦 React 生態的熱門庫。
+大多數推薦工具的做法是：看你用了 React → 推薦 React 生態的熱門庫 → 給你一大堆。
 
-問題是：**熱門不代表你需要。**
+問題是：**熱門不代表你需要。** AI 不知道你的代碼長什麼樣就推薦，等於瞎推。
 
-這個工具的做法是：先讀你的代碼 → 發現你的 HTTP 重試邏輯其實寫得很好 → 不推薦 axios，因為你不需要。
+這個工具的做法是兩階段：
+- **第一階段**（便宜）：掃技術棧 → 搜 → 擺出來讓你選
+- **第二階段**（精準）：你指的那幾個 → 去讀你的實際代碼比對 → 誠實回報
 
-**「你目前不需要任何東西」是一個完全正常且有價值的結果。**
+你指到哪，它才讀到哪。不浪費 token，不浪費你的時間。
+
+**「都不需要」和「你的代碼已經夠好」都是完全正常的結果。**
 
 ## 它怎麼運作
 
 ```
-第一次 /oss（花一點時間，但只需一次）
+Phase 1（便宜，每次都跑）
       ↓
-讀你的代碼，理解架構和依賴
+讀技術棧（package.json / Cargo.toml）
       ↓
-標記哪些已經很好（不推薦替換）
-標記哪些有真正的缺口
+搜 GitHub + Hacker News
       ↓
-把分析結果存進 .oss-profile.yml
+按類別擺出來
       ↓
-只針對缺口搜 GitHub + Hacker News
-      ↓
-檢查安全性 + 評估遷移成本
-      ↓
-給你鑑定結果（按缺口分組）
+問你：「有沒有感興趣的？」
 
-之後每次 /oss
+Phase 2（你指了才跑）
       ↓
-讀 .oss-profile.yml（已有分析結果）
+讀你指定領域的實際代碼（2-3 個檔案）
       ↓
-檢查 git diff 有沒有大改
+比對：你現在的代碼 vs 這個庫
       ↓
-沒大改 → 直接搜（省 token）
-有大改 → 只重掃變動部分
+誠實回報：值不值得、遷移成本、風險
+      ↓
+結果存進 .oss-profile.yml（下次不重複評估）
 ```
 
 ### 鑑定等級
 
 | 等級 | 意思 |
 |------|------|
-| SSR | 直接解決你代碼裡的真實問題，安全，遷移成本合理 |
+| SSR | 比對過你的代碼，確認能解決真實問題，遷移成本合理 |
 | SR | 值得花時間試用 |
 | R | 有潛力，先加個書籤 |
 | N | 有疑慮，先別碰 |
@@ -102,13 +102,12 @@ curl -o .cursor/rules/oss.mdc https://raw.githubusercontent.com/maxihermit/gate-
 ## 怎麼用
 
 ```
-/oss                          # 幫你找有用的新工具（第一次會先分析代碼）
+/oss                          # 掃技術棧 → 搜 → 擺出來問你
 /oss all                      # 你有 5 個專案？一次全掃
 /oss audit owner/repo         # 老闆說要用這個套件，先幫我查一下會不會爆炸
 /oss typescript               # 只看特定語言的
 /oss 簡報工具                   # 我要做簡報，有沒有什麼好東西
 /oss init                     # 告訴它你的專案在做什麼，推薦會更準
-/oss rescan                   # 強制重新分析代碼（大改版後用）
 ```
 
 ### 每天自動跑
@@ -123,18 +122,31 @@ curl -o .cursor/rules/oss.mdc https://raw.githubusercontent.com/maxihermit/gate-
 
 ## 報告長什麼樣子
 
+Phase 1（自動跑）：
 ```
-我的寶庫裡有幾個東西可能適合 my-web-app：
+我的寶庫裡有幾個東西可能跟 my-web-app 有關：
 
 ═══════════════════════════════════════
-  my-web-app — 電商網站
-  代碼掃描：2025-01-15 | 缺口：1 個
+  my-web-app — React + Node.js 電商網站
 ═══════════════════════════════════════
 
-  缺口 1：AI 串流回應手寫 80 行，不穩定
+  AI/LLM
   ─────────────────────────────────────
-  SSR  ⭐ 15,234  vercel/ai — 3 行就能做串流 AI 回應
+  ⭐ 15,234  vercel/ai — AI SDK，串流 + 重試
+  ⭐  3,200  instructor-ai/instructor — 結構化 LLM 輸出
 
+  UI
+  ─────────────────────────────────────
+  ⭐ 82,000  shadcn/ui — 可複製貼上的 UI 元件
+
+  已排除：12 個（已在用、無授權、已封存）
+═══════════════════════════════════════
+
+有沒有感興趣的？指給我看，我去比對你的實際代碼。
+```
+
+你說「vercel/ai 看一下」，Phase 2（去讀代碼）：
+```
   ┌─ vercel/ai — 做 AI 功能的 SDK
   │  ⭐ 15,234  MIT  2 天前更新  156 人貢獻
   │  SSR
@@ -147,21 +159,21 @@ curl -o .cursor/rules/oss.mdc https://raw.githubusercontent.com/maxihermit/gate-
   └─────────────────────────────────────
 ```
 
-沒有缺口的時候：
+你說「都不需要」：
 ```
 ═══════════════════════════════════════
-  my-web-app
-  代碼掃描完成，目前沒有明顯缺口。繼續保持。
+  好，寶庫先收著。下週再看。
 ═══════════════════════════════════════
 ```
 
 ## 資安與隱私
 
-- **會讀你的代碼**來理解架構（這是推薦準確的關鍵）
+- Phase 1 **只讀 package.json 這類設定檔**（便宜、快速）
+- Phase 2 **你指定才讀代碼**（只讀你指到的那個領域的 2-3 個檔案）
 - **不讀** .env、密碼、金鑰
 - **不安裝**任何東西，只給你報告
-- **不會把你的代碼傳到外面**（代碼分析在本地，只有套件名稱會送到 GitHub/OSV API）
-- 分析結果存在你的 `.oss-profile.yml`，你可以隨時刪掉
+- **不會把你的代碼傳到外面**（只有套件名稱會送到 GitHub/OSV API）
+- 評估結果存在 `.oss-profile.yml`，下次不重複評估，你可以隨時刪
 - 規則全寫在 `oss.md` 裡，你可以自己看完每一行
 
 ## GITHUB_TOKEN（選用）
@@ -178,21 +190,23 @@ export GITHUB_TOKEN=ghp_...
 
 > *"You dare develop without consulting the treasury? All the world's open-source treasures belong to me."*
 
-An AI skill that **reads your actual code first**, finds real gaps, then searches GitHub and Hacker News for libraries that solve those specific problems. Security-checked.
+An AI skill that searches GitHub and Hacker News for trending projects, shows you what's relevant to your stack, and — when you point at something — reads your actual code to tell you honestly whether it's worth using.
 
 **It only reports. It never installs anything.**
 
 ### What makes this different
 
-Most "find open-source" tools look at your stack and recommend popular libraries.
+Most tools: scan your stack → dump a list of popular libraries → you figure out which ones matter.
 
-This one reads your code, understands your architecture, and only recommends things that solve **verified problems**. "You don't need anything right now" is a perfectly valid result.
+This tool: scan your stack → show you what's out there → **you pick what's interesting** → it reads your code and tells you "worth it" or "your code is already fine."
+
+**Two phases: cheap browsing, then targeted deep-dive only where you care.**
 
 ### How it works
 
-1. First run: analyzes your code → saves findings to `.oss-profile.yml`
-2. Subsequent runs: reads cached analysis → checks git diff → searches only for real gaps
-3. Results grouped by gap, not by popularity
+1. **Phase 1** (cheap, always runs): reads tech stack → searches → presents a categorized menu → asks "anything interesting?"
+2. **Phase 2** (you trigger): reads your actual code for the areas you pointed at → honest before/after verdict
+3. Results saved to `.oss-profile.yml` so it never re-evaluates the same thing
 
 ### Install
 
@@ -210,13 +224,12 @@ curl -o ~/.claude/commands/oss.md https://raw.githubusercontent.com/maxihermit/g
 ### Usage
 
 ```
-/oss                          # Find tools for verified gaps (analyzes code first time)
+/oss                          # Scan stack → show menu → you pick → deep verify
 /oss all                      # Scan all your projects at once
 /oss audit owner/repo         # "Boss wants this lib, check if it'll blow up"
 /oss typescript               # Filter by language
 /oss presentation tools       # Search specific topic
 /oss init                     # Describe your project for better results
-/oss rescan                   # Force full code re-analysis
 ```
 
 ### Daily auto-scan
@@ -227,19 +240,20 @@ In Claude Code: `Help me create a scheduled task that runs /oss all every mornin
 
 | Grade | Meaning |
 |-------|---------|
-| SSR | Solves a verified gap in your code. Safe. Migration cost justified. |
-| SR | Worth trying for a real gap. |
+| SSR | Verified against your code. Solves a real problem. Migration justified. |
+| SR | Likely helps after code review. Worth evaluating. |
 | R | Has potential. Bookmark it. |
 | N | Has concerns. Don't touch it yet. |
 | Junk | Unsafe. Not even my dog would use it. |
 
 ### Security & Privacy
 
-- **Reads your code** to understand architecture (this is why recommendations are accurate)
+- Phase 1 only reads config files (package.json, etc.) — cheap and fast
+- Phase 2 reads code **only for areas you point at** (2-3 files per area)
 - Never reads `.env`, passwords, API keys
 - Never installs anything (that's your call)
-- Code analysis stays local — only package names go to GitHub/OSV APIs
-- Analysis cached in `.oss-profile.yml` (deletable anytime)
+- Only package names go to external APIs (GitHub/OSV)
+- Verdicts cached in `.oss-profile.yml` (deletable anytime)
 - Full prompt in `oss.md` — read every line yourself
 
 ## License
