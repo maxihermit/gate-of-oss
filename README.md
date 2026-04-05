@@ -8,17 +8,16 @@
 
 ## 這是什麼
 
-一個 AI Skill。裝好之後，你只要打 `/oss`，它就會自動去 GitHub 和 Hacker News 找最近熱門的開源專案，跟你說哪些對你正在開發的東西有用，然後幫你檢查那些專案安不安全。
+你是不是每次都在 Twitter 或 Hacker News 上偶然看到別人分享了一個超讚的開源工具，然後才發現「靠，這個東西三個月前就有了，我到底在幹嘛」？
 
-**它只會給你報告，不會幫你安裝任何東西。**
+這個 AI Skill 幫你解決這個問題。裝好之後打 `/oss`，它會自動去 GitHub 和 Hacker News 幫你找最近熱門的開源專案，跟你說哪些對你的專案有用，然後幫你做資安檢查。
+
+**它只會給你報告，不會幫你安裝任何東西。畢竟王只鑑定，不親自動手。**
 
 ## 它怎麼運作
 
 ```
-你正在開發專案
-      ↓
-每天 GitHub 上都有新的開源工具出現
-你不可能每天自己去看
+你正在開發專案，忙到沒空看 GitHub
       ↓
 /oss 幫你去寶庫翻
       ↓
@@ -26,20 +25,22 @@
       ↓
 檢查安全性：授權條款、已知漏洞、有沒有人在維護
       ↓
-給你鑑定結果：SSR / SR / R / N / 廢鐵
+給你鑑定結果
 ```
 
 ### 鑑定等級
 
 | 等級 | 意思 |
 |------|------|
-| SSR | 直接解決你的問題，安全，馬上用 |
-| SR | 值得試用 |
-| R | 有潛力，再看看 |
-| N | 有疑慮，先別碰 |
+| SSR | 直接解決你的問題，安全，不用馬上就是跟錢過不去 |
+| SR | 值得花時間試用 |
+| R | 有潛力，先加個書籤 |
+| N | 有疑慮，先別碰，碰了可能會後悔 |
 | 廢鐵 | 不安全，狗都不用 |
 
 ## 安裝
+
+一行指令，裝完就能用：
 
 ### Claude Code
 
@@ -67,17 +68,17 @@ curl -o .cursor/rules/oss.mdc https://raw.githubusercontent.com/maxihermit/gate-
 
 ### 其他平台
 
-直接把 `oss.md` 的內容貼到對話裡。
+直接把 `oss.md` 的內容貼到對話裡，一樣能用。
 
 ## 怎麼用
 
 ```
-/oss init                     # 第一次用：告訴它你的專案在做什麼
 /oss                          # 幫你找有用的新工具
-/oss all                      # 一次掃描你所有的專案
-/oss audit owner/repo         # 檢查某個 repo 安不安全
+/oss all                      # 你有 5 個專案？一次全掃
+/oss audit owner/repo         # 老闆說要用這個套件，先幫我查一下會不會爆炸
 /oss typescript               # 只看特定語言的
-/oss 簡報工具                   # 搜特定主題
+/oss 簡報工具                   # 我要做簡報，有沒有什麼好東西
+/oss init                     # 告訴它你的專案在做什麼，推薦會更準
 ```
 
 ### 每天自動跑
@@ -87,6 +88,8 @@ curl -o .cursor/rules/oss.mdc https://raw.githubusercontent.com/maxihermit/gate-
 ```
 幫我建一個排程任務，每天早上跑 /oss all
 ```
+
+從此每天早上打開電腦就有一份鑑定報告等你。比看新聞有用多了。
 
 ## 報告長什麼樣子
 
@@ -114,15 +117,15 @@ curl -o .cursor/rules/oss.mdc https://raw.githubusercontent.com/maxihermit/gate-
 
 ## 資安與隱私
 
-- 只讀 package.json 這類設定檔，**不讀你的程式碼**
-- **不讀** .env、密碼、金鑰
-- **不安裝**任何東西，只給你報告
+- 只讀 package.json 這類設定檔，**不讀你的程式碼**（我們對你的程式碼沒興趣）
+- **不讀** .env、密碼、金鑰（我們又不是駭客）
+- **不安裝**任何東西，只給你報告（安不安裝你自己決定）
 - **不會把你的程式碼傳到外面**
-- 規則全寫在 `oss.md` 裡，你可以自己看完每一行
+- 規則全寫在 `oss.md` 裡，你可以自己看完每一行，不到 130 行
 
 ## GITHUB_TOKEN（選用）
 
-不設也能用，但一小時只能搜 60 次。設了可以搜 5,000 次。
+不設也能用，但一小時只能搜 60 次。設了可以搜 5,000 次。如果你每天自動跑的話建議設一下。
 
 ```bash
 export GITHUB_TOKEN=ghp_...
@@ -154,35 +157,35 @@ curl -o ~/.claude/commands/oss.md https://raw.githubusercontent.com/maxihermit/g
 ### Usage
 
 ```
-/oss init                     # First time: describe your project
 /oss                          # Find useful new tools
 /oss all                      # Scan all your projects at once
-/oss audit owner/repo         # Security check a specific repo
+/oss audit owner/repo         # "Boss wants this lib, check if it'll blow up"
 /oss typescript               # Filter by language
 /oss presentation tools       # Search specific topic
+/oss init                     # Describe your project for better results
 ```
 
 ### Daily auto-scan
 
-In Claude Code, say: `Help me create a scheduled task that runs /oss all every morning`
+In Claude Code: `Help me create a scheduled task that runs /oss all every morning`
 
 ### Grades
 
 | Grade | Meaning |
 |-------|---------|
-| SSR | Solves your problem. Safe. Use it. |
+| SSR | Solves your problem. Safe. Use it or you're leaving money on the table. |
 | SR | Worth trying. |
-| R | Has potential. Evaluate further. |
-| N | Has concerns. Wait. |
+| R | Has potential. Bookmark it. |
+| N | Has concerns. Don't touch it yet. |
 | Junk | Unsafe. Not even my dog would use it. |
 
 ### Security & Privacy
 
-- Only reads config files (package.json, etc.) — never your source code
-- Never reads .env, passwords, API keys
-- Never installs anything
+- Only reads config files — never your source code (we don't care about your code)
+- Never reads .env, passwords, API keys (we're not hackers)
+- Never installs anything (that's your call)
 - Never sends your code anywhere
-- Full prompt is in `oss.md` — read it yourself
+- Full prompt is in `oss.md` — under 130 lines, read it yourself
 
 ## License
 
