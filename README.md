@@ -183,3 +183,7 @@ In Claude Code, say: `Help me create a scheduled task that runs /gilgamesh all e
 ## License
 
 MIT
+
+---
+
+*如果你笑出來了，請給一顆星星。If this made you laugh, please star it.*
