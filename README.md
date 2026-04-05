@@ -59,7 +59,17 @@ Copy the contents of `4d-bag.md` into your platform's instruction file:
 
 ### Scheduled (daily auto-scan)
 
-In Claude Code, set up a scheduled task to run `/4d-bag all` every morning. It will scan all your projects and notify you of new tools worth checking out.
+You can set up a daily scan so you don't have to remember to run it manually.
+
+**Claude Code:** Open Claude Code and say:
+
+```
+Help me create a scheduled task that runs /4d-bag all every morning
+```
+
+Claude Code will set it up for you. You'll get a notification each time it finishes.
+
+**Other platforms:** Use your OS cron or task scheduler to trigger the scan on your preferred schedule.
 
 ## Example Output
 
@@ -136,7 +146,15 @@ curl -o ~/.claude/commands/4d-bag.md https://raw.githubusercontent.com/maxihermi
 5. 檢查 license、已知漏洞、維護狀態
 6. 給出建議：ADOPT（直接用）/ TRIAL（試試看）/ ASSESS（觀望）/ HOLD（先別碰）/ AVOID（別用）
 
-可以搭配排程任務每天自動跑。
+### 每天自動跑
+
+在 Claude Code 裡直接說：
+
+```
+幫我建一個排程任務，每天早上跑 /4d-bag all
+```
+
+就好了。跑完會自動通知你結果。
 
 ### 資安與隱私
 
