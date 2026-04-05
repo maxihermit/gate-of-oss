@@ -93,34 +93,23 @@ curl -o .cursor/rules/oss.mdc https://raw.githubusercontent.com/maxihermit/oss/m
 ## 報告長什麼樣子
 
 ```
-## my-web-app — 電商網站
+═══════════════════════════════════════
+  my-web-app — 電商網站
+═══════════════════════════════════════
 
-| Repo | Stars | 等級 | 一句話 |
-|------|-------|------|--------|
-| vercel/ai | 15,234 | SSR | 3 行就能做串流 AI 回應 |
-| shadcn/ui | 82,000 | SR | 不用再自己刻 UI 元件 |
+  SSR  ⭐ 15,234  vercel/ai — 3 行就能做串流 AI 回應
+  SR   ⭐ 82,000  shadcn/ui — 不用再自己刻 UI 元件
 
----
-
-### vercel/ai — 做 AI 功能的 SDK
-
-| 項目 | 內容 |
-|------|------|
-| Stars | 15,234 |
-| License | MIT ✓ |
-| 最近更新 | 2 天前 |
-| 貢獻者 | 156 人 |
-| 等級 | **SSR** |
-
-**Before → After**
-
-| | Before | After |
-|---|---|---|
-| 做法 | 自己寫 fetch 串 OpenAI API | 用 AI SDK 內建的 useChat hook |
-| 程式碼 | 80 行，要自己管串流和錯誤處理 | 3 行，自動處理 |
-| 結果 | 串流不穩定，錯誤處理不完整 | 穩定串流，自動重試 |
-
-**結論：** 你已經在用 Next.js，這個直接裝就能用，省 80 行程式碼。
+  ┌─ vercel/ai — 做 AI 功能的 SDK
+  │  ⭐ 15,234  MIT  2 天前更新  156 人貢獻
+  │  等級: SSR
+  │
+  │  Before:  自己寫 fetch 串 OpenAI，80 行，串流不穩定
+  │  After:   用 useChat hook，3 行，自動串流 + 重試
+  │  差異:    省 80 行程式碼，穩定性大幅提升
+  │
+  │  安全: MIT ✓ | CVE: 0 | 活躍維護 ✓
+  └─────────────────────────────────────
 ```
 
 ## 資安與隱私
@@ -228,34 +217,23 @@ Help me create a scheduled task that runs /oss all every morning
 ### Example output
 
 ```
-## my-web-app — e-commerce site
+═══════════════════════════════════════
+  my-web-app — e-commerce site
+═══════════════════════════════════════
 
-| Repo | Stars | Grade | One-liner |
-|------|-------|-------|-----------|
-| vercel/ai | 15,234 | SSR | Streaming AI in 3 lines |
-| shadcn/ui | 82,000 | SR | Stop building UI from scratch |
+  SSR  ⭐ 15,234  vercel/ai — Streaming AI in 3 lines
+  SR   ⭐ 82,000  shadcn/ui — Stop building UI from scratch
 
----
-
-### vercel/ai — AI SDK for building AI-powered apps
-
-| Item | Detail |
-|------|--------|
-| Stars | 15,234 |
-| License | MIT |
-| Last commit | 2 days ago |
-| Contributors | 156 |
-| Grade | **SSR** |
-
-Before → After
-
-| | Before | After |
-|---|---|---|
-| How | Manual fetch to OpenAI API | Built-in useChat hook |
-| Code | 80 lines, manual streaming | 3 lines, automatic |
-| Result | Flaky streaming, no retry | Stable, auto-retry |
-
-**Bottom line:** You already use Next.js. Install and save 80 lines.
+  ┌─ vercel/ai — AI SDK for building AI-powered apps
+  │  ⭐ 15,234  MIT  2 days ago  156 contributors
+  │  Grade: SSR
+  │
+  │  Before:  Manual fetch to OpenAI, 80 lines, flaky streaming
+  │  After:   useChat hook, 3 lines, auto-streaming + retry
+  │  Gain:    Save 80 lines, much more stable
+  │
+  │  Security: MIT ✓ | CVE: 0 | Active ✓
+  └─────────────────────────────────────
 ```
 
 ### Security & Privacy

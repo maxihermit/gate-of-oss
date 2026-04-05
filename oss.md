@@ -116,52 +116,46 @@ Classification:
 
 For each project, first show a summary table of all recommendations, then show details for each one.
 
-**Summary table (per project):**
+Use this format. It's designed to be readable in a terminal, not just in markdown renderers.
+
+**Per project, first a quick list:**
 
 ```
-## [project name] — [one line description]
+═══════════════════════════════════════
+  [project name] — [one line description]
+═══════════════════════════════════════
 
-| Repo | Stars | Grade | One-line reason |
-|------|-------|-------|-----------------|
-| owner/repo1 | 12,345 | SSR | Replaces your hand-rolled auth with 20 lines |
-| owner/repo2 | 8,000 | SR | Better Excel export than openpyxl |
-| owner/repo3 | 500 | N | No license |
+  SSR  ⭐ 12,345  owner/repo1 — Replaces your hand-rolled auth
+  SR   ⭐  8,000  owner/repo2 — Better Excel export than openpyxl
+  R    ⭐    500  owner/repo3 — Has potential, needs evaluation
+  N    ⭐    200  owner/repo4 — No license, skip
 ```
 
-**Then, details for each recommendation (only SSR and SR need full detail, R and N keep brief):**
+**Then detail cards for SSR and SR only:**
 
 ```
----
-
-### owner/repo — what it does
-
-| Item | Detail |
-|------|--------|
-| Stars | 12,345 |
-| License | MIT ✓ |
-| Last commit | 2 days ago |
-| Contributors | 156 |
-| Grade | **SSR** |
-
-**Before → After**
-
-| | Before (now) | After (with this) |
-|---|---|---|
-| How | [what user does now] | [what changes] |
-| Code | [X lines / manual / library Y] | [N lines / automated / library Z] |
-| Result | [current outcome] | [improved outcome] |
-
-**Bottom line:** [one sentence — is it worth switching and why]
+  ┌─ owner/repo — what it does
+  │  ⭐ 12,345  MIT  2 days ago  156 contributors
+  │  Grade: SSR
+  │
+  │  Before:  [what user does now, 1-2 lines]
+  │  After:   [what changes with this tool, 1-2 lines]
+  │  Gain:    [one sentence — what specifically gets better]
+  │
+  │  Security: MIT ✓ | CVE: 0 | Active ✓
+  └─────────────────────────────────────
 ```
 
-For R and N grade, just show the summary table row, no detail section needed.
+R and N grade: only appear in the quick list above, no detail card.
 
-If you can show a short code snippet (under 5 lines) in the Before/After table, do it. If it's a workflow change, describe the steps instead.
+If you can show a short code snippet (under 5 lines) in Before/After, do it. If it's a workflow change, describe the steps instead.
 
 If no results for a project:
 ```
-## [project name]
-No relevant new tools found this week.
+═══════════════════════════════════════
+  [project name]
+  No relevant new tools found this week.
+═══════════════════════════════════════
 ```
 
 ## The King's Law
