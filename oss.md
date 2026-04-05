@@ -53,76 +53,66 @@ exclude: [crypto, blockchain, game-dev]
 
 ## Step 2: Open the Gate
 
-**IMPORTANT: Use `python` (not `python3`) on Windows. Always use `encoding='utf-8'` when reading JSON files in Python on Windows.**
-
-First, calculate the date. Use a cross-platform approach:
+Search GitHub and Hacker News. The GitHub search API already returns license, pushed_at, archived, stars, forks, and language for each result — use these directly, no need to query each repo individually.
 
 ```bash
-# Cross-platform date calculation (works on Windows, Mac, Linux)
-python -c "from datetime import datetime, timedelta; print((datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d'))"
-```
-
-Store the result and use it in the search query:
-
-```bash
-# The Gate of GitHub
-# Replace DATE with the calculated date above
-# Replace LANG with detected language (python, typescript, etc.)
-# If the user has multiple projects with different languages, run separate searches per language
+# GitHub Search API — returns full metadata per repo
+# Adjust: DATE = N days ago (daily=1, weekly=7, monthly=30), LANG = detected language
 curl -s "https://api.github.com/search/repositories?q=pushed:>DATE+stars:>100+language:LANG&sort=stars&order=desc&per_page=25" \
   -H "Accept: application/vnd.github.v3+json" -H "User-Agent: oss" \
   ${GITHUB_TOKEN:+-H "Authorization: token $GITHUB_TOKEN"}
 ```
 
 ```bash
-# The Gate of Hacker News
+# Hacker News — GitHub links with 20+ upvotes
+# Adjust: TIMESTAMP = Unix timestamp of N days ago
 curl -s "https://hn.algolia.com/api/v1/search?query=github.com&tags=story&numericFilters=created_at_i>TIMESTAMP,points>20&hitsPerPage=20"
 ```
 
-**When parsing JSON responses with Python on Windows, always open files with `encoding='utf-8'` and handle emoji/unicode by using `.encode('ascii','replace').decode()` for display.**
+For dates and timestamps, calculate them with whatever tool is available (python, node, bash date, etc.) — do not assume any specific OS.
+
+**After collecting results from both sources, deduplicate by repo name.** If the same repo appears in both GitHub and HN results, keep it once but note it was trending on both.
 
 If the user specified a topic, add it to the GitHub search `q` parameter.
-If the profile has `interests`, also run additional searches for those topics.
+If the profile has `interests`, also search for those topics.
 If `all` mode with multiple languages, run one search per language.
 
-## Step 3: Appraise
+## Step 3: Verify Authenticity + Appraise
 
-Judge each treasure against the user's kingdom. Only present treasures worthy of a king's attention. **An empty vault report is more honorable than presenting counterfeits.**
+**Do these together, not separately.** For each candidate repo, check security first, then assign a grade.
 
-**If no relevant treasures are found for a project, say so clearly: "No relevant new tools found for [project name] this week." Do not pad the report with irrelevant results.**
+**From GitHub search results (already available, no extra API call needed):**
+- `license.spdx_id` — check if it's safe
+- `pushed_at` — how recently updated
+- `archived` — is it dead
+- `stargazers_count` / `forks_count` — popularity
 
-Classification:
+**Only query extra APIs for repos that pass the initial filter (relevant + has license + not archived).** This saves API quota.
 
-- **SSR** — Directly solves a pain point, safe, well-maintained. Use it.
-- **SR** — Worth trying. Likely useful, deserves evaluation.
-- **R** — Has potential but not yet confirmed.
-- **N** — Concerns detected. Wait.
-- **Junk** — Unsafe or unsuitable. Don't use it.
-
-## Step 4: Verify Authenticity
-
-Every treasure must pass the King's inspection:
-
+**For repos that pass the filter, optionally check CVEs (limit to top 5 repos max):**
 ```bash
-# Inscription check (license)
-curl -s "https://api.github.com/repos/OWNER/REPO/license" -H "Accept: application/vnd.github.v3+json" -H "User-Agent: oss" ${GITHUB_TOKEN:+-H "Authorization: token $GITHUB_TOKEN"}
-
-# Forge inspection (maintenance — check pushed_at, archived, stargazers_count, forks_count)
-curl -s "https://api.github.com/repos/OWNER/REPO" -H "Accept: application/vnd.github.v3+json" -H "User-Agent: oss" ${GITHUB_TOKEN:+-H "Authorization: token $GITHUB_TOKEN"}
-
-# Curse detection (CVE scan — check dependencies if package.json or requirements.txt exists)
-curl -s -X POST "https://api.osv.dev/v1/query" -H "Content-Type: application/json" -d '{"package":{"name":"PKG","ecosystem":"npm"},"version":"VER"}'
-# For Python packages, use ecosystem "PyPI" instead of "npm"
+# CVE scan via OSV.dev — only check top 5 dependencies, not all of them
+# For npm: ecosystem = "npm"
+# For Python: ecosystem = "PyPI"
+curl -s -X POST "https://api.osv.dev/v1/query" -H "Content-Type: application/json" \
+  -d '{"package":{"name":"PKG","ecosystem":"ECOSYSTEM"},"version":"VER"}'
 ```
 
-Marks of a counterfeit:
-- No license → legally cannot use, always Junk
-- AGPL/GPL → warn about copyleft restrictions, not automatically Junk but flag clearly
-- Archived → dead project, Junk
-- Last push > 1 year → likely abandoned, at best N
-- Single contributor → bus factor risk, flag it
+**Grading rules:**
+- No license → **Junk**, always
+- Archived → **Junk**, always
+- AGPL/GPL → not Junk, but warn about copyleft restrictions clearly
+- Last push > 1 year → at best **N**
+- Single contributor → flag as bus factor risk, lower one grade
 
-## Step 5: Present to the King
+Classification:
+- **SSR** — Directly solves a pain point, safe license, well-maintained. Use it.
+- **SR** — Worth trying. Likely useful, acceptable security.
+- **R** — Has potential but not yet confirmed.
+- **N** — Concerns detected (maintenance, license, CVEs). Wait.
+- **Junk** — Unsafe or unsuitable. Don't use it.
+
+## Step 4: Present to the King
 
 ```
 ## [project name]
@@ -134,7 +124,7 @@ Pain points: [pain points]
 ⭐ N stars | MIT | N days ago | N contributors
 **SSR**
 Why: [specifically how this helps with the user's pain point or interest]
-Security: [license, CVE count, maintenance status]
+Security: [license status, CVE count if checked, last commit date, contributor count]
 ```
 
 If no results for a project:
